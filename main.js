@@ -4,6 +4,7 @@
 var http = require('http');
 var fs = require('fs');
 var url = require('url');
+var qs = require('querystring');
 
 // ** 함수 정의. html 본문;
 function templateHTML(title, list, body){
@@ -57,7 +58,6 @@ var app = http.createServer(function(request,response){
     var _url = request.url;
     var queryData = url.parse(_url, true).query;
     var pathname = url.parse(_url, true).pathname;
-    console.log(pathname)
     if(pathname === '/'){
       if(queryData.id === undefined){
         fs.readdir('./data', function(error, filelist){
@@ -91,7 +91,7 @@ var app = http.createServer(function(request,response){
         });
       }
 
-      // # 1. 그렇지 않고(pathname이 '/'이 아니고) 만약 pathname이 '/create' 라면;
+      // # 1. 그렇지 않고 (pathname이 '/'이 아니고) 만약 pathname이 '/create' 라면;
       // # 1. fs 모듈의 메서드인 readdir() 실행. 같은 위치의 data 폴더 안에 있는 파일들의 제목을 읽음;
       // # 1. 변수선언. title = 'Welcome - create'
       // # 1. 변수선언. template = templateHTML() 함수실행 (method에서 get과 post방식의 차이점 숙지 중요**);
@@ -100,7 +100,7 @@ var app = http.createServer(function(request,response){
         var title = 'Welcome - create';
         var list = templateList(filelist);
         var template = templateHTML(title, list, `
-          <form action="http://localhost:3000/process_create" method="post">
+          <form action="http://localhost:3000/create_process" method="post">
           <p>
             <input type="text" name="title" placeholder="title">
           </p>
@@ -117,6 +117,33 @@ var app = http.createServer(function(request,response){
         response.writeHead(200);
         response.end(template);
       });
+
+      // #1. 그렇지 않고 pathname이 '/'도 아니고 '/create'도 아니고 '/create_process'라면;
+      // #1. 변수선언. body ='' (String 형식);
+      // #1. data를 받아옴;
+      // #1. body에 받아온 data 내용을 추가;
+      // #1. data 전송 종료;
+      // #1. 변수선언. post = body 내용을 객체화시킴;
+      // #1. 변수선언. title = post방식으로 전송된 data의 제목;
+      // #1. 변수선언. description = post방식으로 전송된 data의 내용;
+      // #1. data 폴더에 받아온 data 내용을 저장하기 위해 fs모듈의 메서드인 writeFile('대상 파일, 내용, 옵션, 콜백함수') 메서드 사용;
+    } else if (pathname === '/create_process') {
+      var body = '';
+      request.on('data', function(data){
+        body = body + data;
+      });
+      request.on('end', function(){
+        var post = qs.parse(body);
+        var title = post.title;
+        var description = post.description;
+        fs.writeFile(`data/${title}`, description, 'utf8', function(err){
+          // # 1. 헤더 정보에 상태코드 302로 응답; 사용자가 submit 클릭 후 그 페이지를 볼 수 있도록 리다이렉션시킴;
+          // # 1. 화면 출력;
+          response.writeHead(302, {Location: `/?id=${title}`});
+          response.end();
+        })
+      });
+
       // # 1. 그렇지 않다면 (pathname이 '/'도 아니고 '/create'도 아니라면);
       // # 1. 헤더 정보에 상태코드 404로 응답;
       // # 1. 화면에 'Not found' 출력;
