@@ -7,7 +7,7 @@ var url = require('url');
 var qs = require('querystring');
 
 // ** 함수 정의. html 본문;
-function templateHTML(title, list, body){
+function templateHTML(title, list, body, control){
   return `
   <!doctype html>
   <html>
@@ -18,7 +18,7 @@ function templateHTML(title, list, body){
   <body>
     <h1><a href="/">WEB</a></h1>
     ${list}
-    <a href="/create">create</a>
+    ${control}
     ${body}
   </body>
   </html>
@@ -54,6 +54,8 @@ function templateList(filelist){
 // # 2. 변수선언. description = 'Hello, Node.js';
 // # 2. 변수선언. list = templateList() 함수실행;
 // # 2. 변수선언. template = templateHTML() 함수 실행;
+// # 2. templateHTML() 함수의 'body' 요소;
+// # 2. templateHTML() 함수의 'control' 요소 (update 기능 없음);
 var app = http.createServer(function(request,response){
     var _url = request.url;
     var queryData = url.parse(_url, true).query;
@@ -64,7 +66,10 @@ var app = http.createServer(function(request,response){
           var title = 'Welcome';
           var description = 'Hello, Node.js';
           var list = templateList(filelist);
-          var template = templateHTML(title, list, `<h2>${title}</h2>${description}`);
+          var template = templateHTML(title, list,
+            `<h2>${title}</h2>${description}`,
+            `<a href="/create">create</a>`
+          );
           // # 2. 헤더 정보에 상태코드 200으로 응답;
           // # 2. 변수 template 출력;
           response.writeHead(200);
@@ -77,12 +82,17 @@ var app = http.createServer(function(request,response){
         // # 2. 변수선언. title = queryData 객체의 id값;
         // # 2. 변수선언. list = templateList() 함수실행;
         // # 2. 변수선언. template = templateHTML() 함수실행;
+        // # 2. templateHTML() 함수의 'body' 요소;
+        // # 2. templateHTML() 함수의 'control' 요소 (update 기능 추가);
       } else {
         fs.readdir('./data', function(error, filelist){
           fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
             var title = queryData.id;
             var list = templateList(filelist);
-            var template = templateHTML(title, list, `<h2>${title}</h2>${description}`);
+            var template = templateHTML(title, list,
+              `<h2>${title}</h2>${description}`,
+              `<a href="/create">create</a> <a href="/update?id=${title}">update</a>`
+            );
             // #2. 헤더 정보에 상태코드 200으로 응답;
             // #2. 변수 template 출력;
             response.writeHead(200);
@@ -111,7 +121,7 @@ var app = http.createServer(function(request,response){
             <input type="submit">
           </p>
         </form>
-        `);
+        `, '');
         // # 2. 헤더 정보에 상태코드 200으로 응답;
         // # 2. 변수 template 출력;
         response.writeHead(200);
