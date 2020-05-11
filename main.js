@@ -17,6 +17,7 @@ function templateHTML(title, list, body){
   <body>
     <h1><a href="/">WEB</a></h1>
     ${list}
+    <a href="/create">create</a>
     ${body}
   </body>
   </html>
@@ -56,6 +57,7 @@ var app = http.createServer(function(request,response){
     var _url = request.url;
     var queryData = url.parse(_url, true).query;
     var pathname = url.parse(_url, true).pathname;
+    console.log(pathname)
     if(pathname === '/'){
       if(queryData.id === undefined){
         fs.readdir('./data', function(error, filelist){
@@ -89,9 +91,35 @@ var app = http.createServer(function(request,response){
         });
       }
 
-      // #1. 그렇지 않다면 (만약 사용자가 요청한 url의 pathname이 '/' 아니라면);
-      // #1. 헤더 정보에 상태코드 404로 응답;
-      // #1. 'Not found' 문구 출력;
+      // # 1. 그렇지 않고(pathname이 '/'이 아니고) 만약 pathname이 '/create' 라면;
+      // # 1. fs 모듈의 메서드인 readdir() 실행. 같은 위치의 data 폴더 안에 있는 파일들의 제목을 읽음;
+      // # 1. 변수선언. title = 'Welcome - create'
+      // # 1. 변수선언. template = templateHTML() 함수실행 (method에서 get과 post방식의 차이점 숙지 중요**);
+    } else if (pathname === '/create'){
+      fs.readdir('./data', function(error, filelist){
+        var title = 'Welcome - create';
+        var list = templateList(filelist);
+        var template = templateHTML(title, list, `
+          <form action="http://localhost:3000/process_create" method="post">
+          <p>
+            <input type="text" name="title" placeholder="title">
+          </p>
+          <p>
+            <textarea name="description" placeholder="description"></textarea>
+          </p>
+          <p>
+            <input type="submit">
+          </p>
+        </form>
+        `);
+        // # 2. 헤더 정보에 상태코드 200으로 응답;
+        // # 2. 변수 template 출력;
+        response.writeHead(200);
+        response.end(template);
+      });
+      // # 1. 그렇지 않다면 (pathname이 '/'도 아니고 '/create'도 아니라면);
+      // # 1. 헤더 정보에 상태코드 404로 응답;
+      // # 1. 화면에 'Not found' 출력;
     } else {
       response.writeHead(404);
       response.end('Not found');
