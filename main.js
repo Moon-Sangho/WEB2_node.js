@@ -84,6 +84,7 @@ var app = http.createServer(function(request,response){
         // # 2. 변수선언. template = templateHTML() 함수실행;
         // # 2. templateHTML() 함수의 'body' 요소;
         // # 2. templateHTML() 함수의 'control' 요소 (update 기능 추가);
+        // # 2. form tag = delete 기능 추가;
       } else {
         fs.readdir('./data', function(error, filelist){
           fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
@@ -91,7 +92,12 @@ var app = http.createServer(function(request,response){
             var list = templateList(filelist);
             var template = templateHTML(title, list,
               `<h2>${title}</h2>${description}`,
-              `<a href="/create">create</a> <a href="/update?id=${title}">update</a>`
+              ` <a href="/create">create</a>
+                <a href="/update?id=${title}">update</a>
+                <form action="delete_process" method="post">
+                  <input type="hidden" name="id" value="${title}">
+                  <input type="submit" value="delete">
+                </form>`
             );
             // #2. 헤더 정보에 상태코드 200으로 응답;
             // #2. 변수 template 출력;
@@ -181,7 +187,7 @@ var app = http.createServer(function(request,response){
             <p>
               <input type="submit">
             </p>
-          </form>
+            </form>
             `,
             `<a href="/create">create</a> <a href="/update?id=${title}">update</a>`
           );
@@ -193,7 +199,7 @@ var app = http.createServer(function(request,response){
       });
 
       // # 1. pathname이 '/update_process'라면;
-      // # 1. 변수선언. body ='' (String 형식);
+      // # 1. 변수선언. body = 비어있는 변수 body를 만들어주기 위해서 공백처리, 사용자가 요청할때 들어오는 데이터를 저장해서 이용하기 위한 저장공간을 마련;
       // # 1. data를 받아옴;
       // # 1. body에 받아온 data 내용을 추가;
       // # 1. data 전송 종료;
@@ -219,8 +225,32 @@ var app = http.createServer(function(request,response){
             // # 1. 화면 출력;
             response.writeHead(302, {Location: `/?id=${title}`});
             response.end();
-          });  
+          });
         });
+      });
+      // # 1. pathname이 '/delete_process'라면;
+      // # 1. 변수선언. body = 비어있는 변수 body를 만들어주기 위해서 공백처리, 사용자가 요청할때 들어오는 데이터를 저장해서 이용하기 위한 저장공간을 마련;
+      // # 1. data를 받아옴;
+      // # 1. body에 받아온 data 내용을 추가;
+      // # 1. data 전송 종료;
+      // # 1. 변수선언. post = body 내용을 객체화시킴;
+      // # 1. 변수선언. id = post 객체의 id 값;
+      // # 1. fs 모듈의 메서드인 fs.unlink(`삭제할 파일의 경로`, `콜백함수`) 사용;
+      // # 1. data 폴더에 받아온 data 내용을 저장하기 위해 fs모듈의 메서드인 writeFile('대상 파일, 내용, 옵션, 콜백함수') 메서드 사용;
+    } else if(pathname === '/delete_process'){
+      var body = '';
+      request.on('data', function(data){
+        body = body + data;
+      });
+      request.on('end', function(){
+        var post = qs.parse(body);
+        var id = post.id;
+        fs.unlink(`data/${id}`, function(error) {
+          // # 1. 헤더 정보에 상태코드 302로 응답; 사용자가 delete 클릭 후 홈으로 가도록 리다이렉션시킴;
+          // # 1. 화면 출력;
+          response.writeHead(302, {Location: `/`});
+          response.end();
+        })
       });
       // # 1. #1번 가정의 모든 경우가 아니라면;
       // # 1. 헤더 정보에 상태코드 404로 응답;
