@@ -6,41 +6,42 @@ var fs = require('fs');
 var url = require('url');
 var qs = require('querystring');
 
-// ** 함수 정의. html 본문;
-function templateHTML(title, list, body, control){
-  return `
-  <!doctype html>
-  <html>
-  <head>
-    <title>WEB1 - ${title}</title>
-    <meta charset="utf-8">
-  </head>
-  <body>
-    <h1><a href="/">WEB</a></h1>
-    ${list}
-    ${control}
-    ${body}
-  </body>
-  </html>
-  `;
-}
-
-// ** 함수 정의. 목록(반복문을 통해 표시);
-//  변수선언. list = '<ul>';
-//  변수선언. i=0;
-//  i 값이 data 폴더 안 파일들의 length보다 작다면;
-//  list = 아래 내용;
-//  i 값에 1을 더해가며 while(반복)문의 조건에 부합할 때까지만 반복;
-//  변수 list = 기존 list 형식 + </ul>;
-function templateList(filelist){
-  var list = '<ul>';
-  var i = 0;
-  while(i < filelist.length){
-    list = list + `<li><a href="/?id=${filelist[i]}">${filelist[i]}</a></li>`;
-    i = i + 1;
+// template 객체
+// 1. html 본문 함수,
+// 2. 글 목록 함수 삽입
+//    변수선언. list = '<ul>';
+//    변수선언. i=0;
+//    i 값이 data 폴더 안 파일들의 length보다 작다면;
+//    list = 아래 내용;
+//    i 값에 1을 더해가며 while(반복)문의 조건에 부합할 때까지만 반복;
+//    변수 list = 기존 list 형식 + </ul>;
+var template = {
+  HTML: function(title, list, body, control){
+    return `
+    <!doctype html>
+    <html>
+    <head>
+      <title>WEB1 - ${title}</title>
+      <meta charset="utf-8">
+    </head>
+    <body>
+      <h1><a href="/">WEB</a></h1>
+      ${list}
+      ${control}
+      ${body}
+    </body>
+    </html>
+    `;
+  }, list: function(filelist){
+    var list = '<ul>';
+    var i = 0;
+    while(i < filelist.length){
+      list = list + `<li><a href="/?id=${filelist[i]}">${filelist[i]}</a></li>`;
+      i = i + 1;
+    }
+    list = list+'</ul>';
+    return list;
   }
-  list = list+'</ul>';
-  return list;
 }
 
 // 변수선언. app = http 모듈의 createServer 메서드를 사용하여 서버 객체 생성;
@@ -52,10 +53,10 @@ function templateList(filelist){
 // # 2. fs 모듈의 메서드인 readdir() 실행. 같은 위치의 data 폴더 안에 있는 파일들의 제목을 읽음;
 // # 2. 변수선언. title = 'Welcome';
 // # 2. 변수선언. description = 'Hello, Node.js';
-// # 2. 변수선언. list = templateList() 함수실행;
-// # 2. 변수선언. template = templateHTML() 함수 실행;
-// # 2. templateHTML() 함수의 'body' 요소;
-// # 2. templateHTML() 함수의 'control' 요소 (update 기능 없음);
+// # 2. 변수선언. list = template.list() 함수실행;
+// # 2. 변수선언. html = template.HTML() 함수 실행;
+// # 2. template.HTML() 함수의 'body' 요소;
+// # 2. template.HTML() 함수의 'control' 요소 (update 기능 없음);
 var app = http.createServer(function(request,response){
     var _url = request.url;
     var queryData = url.parse(_url, true).query;
@@ -65,32 +66,32 @@ var app = http.createServer(function(request,response){
         fs.readdir('./data', function(error, filelist){
           var title = 'Welcome';
           var description = 'Hello, Node.js';
-          var list = templateList(filelist);
-          var template = templateHTML(title, list,
+          var list = template.list(filelist);
+          var html = template.HTML(title, list,
             `<h2>${title}</h2>${description}`,
             `<a href="/create">create</a>`
           );
           // # 2. 헤더 정보에 상태코드 200으로 응답;
           // # 2. 변수 template 출력;
           response.writeHead(200);
-          response.end(template);
-        })
+          response.end(html);
+        });
 
         // # 2. 그렇지 않다면 (만약 queryData.id가 undefined이 아니라면);
         // # 2. fs 모듈의 메서드인 readdir() 실행. 같은 위치의 data 폴더 안에 있는 파일들의 제목을 읽음;
         // # 2. fs 모듈의 메서드인 readFile() 실행. readFile(읽고자 하는 파일 이름, 읽을 때 옵션, 파일이 읽혀진 후 호출될 함수);
         // # 2. 변수선언. title = queryData 객체의 id값;
-        // # 2. 변수선언. list = templateList() 함수실행;
-        // # 2. 변수선언. template = templateHTML() 함수실행;
-        // # 2. templateHTML() 함수의 'body' 요소;
-        // # 2. templateHTML() 함수의 'control' 요소 (update 기능 추가);
+        // # 2. 변수선언. list = template.list() 함수실행;
+        // # 2. 변수선언. html = template.HTML() 함수실행;
+        // # 2. template.HTML() 함수의 'body' 요소;
+        // # 2. template.HTML() 함수의 'control' 요소 (update 기능 추가);
         // # 2. form tag = delete 기능 추가;
       } else {
         fs.readdir('./data', function(error, filelist){
           fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
             var title = queryData.id;
-            var list = templateList(filelist);
-            var template = templateHTML(title, list,
+            var list = template.list(filelist);
+            var html = template.HTML(title, list,
               `<h2>${title}</h2>${description}`,
               ` <a href="/create">create</a>
                 <a href="/update?id=${title}">update</a>
@@ -102,7 +103,7 @@ var app = http.createServer(function(request,response){
             // #2. 헤더 정보에 상태코드 200으로 응답;
             // #2. 변수 template 출력;
             response.writeHead(200);
-            response.end(template);
+            response.end(html);
           });
         });
       }
@@ -110,12 +111,12 @@ var app = http.createServer(function(request,response){
       // # 1.  pathname이 '/create' 라면;
       // # 1. fs 모듈의 메서드인 readdir() 실행. 같은 위치의 data 폴더 안에 있는 파일들의 제목을 읽음;
       // # 1. 변수선언. title = 'Welcome - create'
-      // # 1. 변수선언. template = templateHTML() 함수실행 (method에서 get과 post방식의 차이점 숙지 중요**);
+      // # 1. 변수선언. html = template.HTML() 함수실행 (method에서 get과 post방식의 차이점 숙지 중요**);
     } else if (pathname === '/create'){
       fs.readdir('./data', function(error, filelist){
         var title = 'Welcome - create';
-        var list = templateList(filelist);
-        var template = templateHTML(title, list, `
+        var list = template.list(filelist);
+        var html = template.HTML(title, list, `
           <form action="/create_process" method="post">
           <p>
             <input type="text" name="title" placeholder="title">
@@ -131,7 +132,7 @@ var app = http.createServer(function(request,response){
         // # 2. 헤더 정보에 상태코드 200으로 응답;
         // # 2. 변수 template 출력;
         response.writeHead(200);
-        response.end(template);
+        response.end(html);
       });
 
       // # 1. pathname이 '/create_process'라면;
@@ -165,16 +166,16 @@ var app = http.createServer(function(request,response){
       // # 1. fs 모듈의 메서드인 readFile() 실행. readFile(읽고자 하는 파일 이름, 읽을 때 옵션, 파일이 읽혀진 후 호출될 함수);
       // # 1. 변수선언. title = queryData 객체의 id값;
       // # 1. 변수선언. list = templateList() 함수실행;
-      // # 1. 변수선언. template = templateHTML() 함수실행;
-      // # 1. templateHTML() 함수의 'body' 요소;
-      // # 1. templateHTML() 함수의 'control' 요소; ** name=id로 hidden 속성의 텍스트상자를 따로 만든 이유 :
+      // # 1. 변수선언. html = template.HTML() 함수실행;
+      // # 1. template.HTML() 함수의 'body' 요소;
+      // # 1. template.HTML() 함수의 'control' 요소; ** name=id로 hidden 속성의 텍스트상자를 따로 만든 이유 :
       // 사용자가 제목을 변경했을 때, 그것을 data폴더 안에서 찾을 수 없으므로, data 폴더 안의 수정하고자 하는 파일의 제목과 같은 id값이 들어있는 텍스트상자가 필요함;
     } else if (pathname === '/update'){
       fs.readdir('./data', function(error, filelist){
         fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
           var title = queryData.id;
-          var list = templateList(filelist);
-          var template = templateHTML(title, list,
+          var list = template.list(filelist);
+          var html = template.HTML(title, list,
             `
             <form action="/update_process" method="post">
             <input type="hidden" name="id" value="${title}">
@@ -192,9 +193,9 @@ var app = http.createServer(function(request,response){
             `<a href="/create">create</a> <a href="/update?id=${title}">update</a>`
           );
           // # 1. 헤더 정보에 상태코드 200으로 응답;
-          // # 1. 변수 template 출력;
+          // # 1. 변수 html 출력;
           response.writeHead(200);
-          response.end(template);
+          response.end(html);
         });
       });
 
