@@ -1,12 +1,17 @@
 // http 모듈을 요청;
 // fs 모듈을 요청;
 // url 모듈을 요청;
+// querystring 모듈을 요청;
+// lib 폴더 내의 template.js 모듈을 요청;
+// path 모듈을 요청;
+// sanitize-html 모듈을 요청;
 var http = require('http');
 var fs = require('fs');
 var url = require('url');
 var qs = require('querystring');
 var template = require('./lib/template.js');
 var path = require('path');
+var sanitizeHtml = require('sanitize-html');
 
 // 변수선언. app = http 모듈의 createServer 메서드를 사용하여 서버 객체 생성;
 // 변수선언. _url = url의 path를 요청;
@@ -46,6 +51,8 @@ var app = http.createServer(function(request,response){
         // # 2. fs 모듈의 메서드인 readdir() 실행. 같은 위치의 data 폴더 안에 있는 파일들의 제목을 읽음;
         // # 2. fs 모듈의 메서드인 readFile() 실행. readFile(읽고자 하는 파일 이름, 읽을 때 옵션, 파일이 읽혀진 후 호출될 함수);
         // # 2. 변수선언. title = queryData 객체의 id값;
+        // # 2. 변수선언. sanitizedTitle = 제목에 sanitizeHtml 모듈 적용;
+        // # 2. 변수선언. sanitizedTitle = 내용에 sanitizeHtml 모듈 적용;
         // # 2. 변수선언. list = template.list() 함수실행;
         // # 2. 변수선언. html = template.HTML() 함수실행;
         // # 2. template.HTML() 함수의 'body' 요소;
@@ -56,13 +63,17 @@ var app = http.createServer(function(request,response){
           var filteredId = path.parse(queryData.id).base;
           fs.readFile(`data/${filteredId}`, 'utf8', function(err, description){
             var title = queryData.id;
+            var sanitizedTitle = sanitizeHtml(title);
+            var sanitizedDescription = sanitizeHtml(description, {
+              allowedTags: ['h1']
+            });
             var list = template.list(filelist);
-            var html = template.HTML(title, list,
-              `<h2>${title}</h2>${description}`,
+            var html = template.HTML(sanitizedTitle, list,
+              `<h2>${sanitizedTitle}</h2>${sanitizedDescription}`,
               ` <a href="/create">create</a>
-                <a href="/update?id=${title}">update</a>
+                <a href="/update?id=${sanitizedTitle}">update</a>
                 <form action="delete_process" method="post">
-                  <input type="hidden" name="id" value="${title}">
+                  <input type="hidden" name="id" value="${sanitizedTitle}">
                   <input type="submit" value="delete">
                 </form>`
             );
